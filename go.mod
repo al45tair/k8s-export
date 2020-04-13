@@ -1,4 +1,4 @@
-module al45tair.net/k8s-export
+module github.com/al45tair/k8s-export
 
 go 1.13
 
