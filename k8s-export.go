@@ -9,16 +9,24 @@ import (
 	"path/filepath"
 	"strings"
 
-	"go.etcd.io/etcd/mvcc/mvccpb"
 	bolt "go.etcd.io/bbolt"
+	"go.etcd.io/etcd/mvcc/mvccpb"
 
+	admissionv1b1 "k8s.io/api/admissionregistration/v1beta1"
 	appsv1 "k8s.io/api/apps/v1"
+	autoscalev1 "k8s.io/api/autoscaling/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1b1 "k8s.io/api/batch/v1beta1"
+	coordv1b1 "k8s.io/api/coordination/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	extv1b1 "k8s.io/api/extensions/v1beta1"
-	rbacv1 "k8s.io/api/rbac/v1"
+	netv1 "k8s.io/api/networking/v1"
 	netv1b1 "k8s.io/api/networking/v1beta1"
+	policyv1b1 "k8s.io/api/policy/v1beta1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	schedv1 "k8s.io/api/scheduling/v1"
+	storagev1 "k8s.io/api/storage/v1"
+	storagev1b1 "k8s.io/api/storage/v1beta1"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/yaml"
@@ -104,11 +112,37 @@ func writeYAML(yamlFile string, obj *runtime.Unknown) (err error) {
 		} else if obj.Kind == "PersistentVolumeClaim" {
 			var pvc corev1.PersistentVolumeClaim
 			yamlData, err = yamlFromBytes(obj.Raw, &pvc)
+		} else if obj.Kind == "Endpoints" {
+			var ep corev1.Endpoints
+			yamlData, err = yamlFromBytes(obj.Raw, &ep)
+		} else if obj.Kind == "Event" {
+			var ev corev1.Event
+			yamlData, err = yamlFromBytes(obj.Raw, &ev)
+		} else if obj.Kind == "LimitRange" {
+			var lr corev1.LimitRange
+			yamlData, err = yamlFromBytes(obj.Raw, &lr)
+		} else if obj.Kind == "Node" {
+			var node corev1.Node
+			yamlData, err = yamlFromBytes(obj.Raw, &node)
+		} else if obj.Kind == "Pod" {
+			var pod corev1.Pod
+			yamlData, err = yamlFromBytes(obj.Raw, &pod)
+		} else if obj.Kind == "RangeAllocation" {
+			var ra corev1.RangeAllocation
+			yamlData, err = yamlFromBytes(obj.Raw, &ra)
+		} else if obj.Kind == "ResourceQuota" {
+			var rq corev1.ResourceQuota
+			yamlData, err = yamlFromBytes(obj.Raw, &rq)
 		}
 	} else if obj.APIVersion == "extensions/v1beta1" {
 		if obj.Kind == "Ingress" {
 			var ing extv1b1.Ingress
 			yamlData, err = yamlFromBytes(obj.Raw, &ing)
+		}
+	} else if obj.APIVersion == "networking.k8s.io/v1" {
+		if obj.Kind == "NetworkPolicy" {
+			var np netv1.NetworkPolicy
+			yamlData, err = yamlFromBytes(obj.Raw, &np)
 		}
 	} else if obj.APIVersion == "networking.k8s.io/v1beta1" {
 		if obj.Kind == "Ingress" {
@@ -135,6 +169,12 @@ func writeYAML(yamlFile string, obj *runtime.Unknown) (err error) {
 		} else if obj.Kind == "StatefulSet" {
 			var ss appsv1.StatefulSet
 			yamlData, err = yamlFromBytes(obj.Raw, &ss)
+		} else if obj.Kind == "ControllerRevision" {
+			var cr appsv1.ControllerRevision
+			yamlData, err = yamlFromBytes(obj.Raw, &cr)
+		} else if obj.Kind == "ReplicaSet" {
+			var rs appsv1.ReplicaSet
+			yamlData, err = yamlFromBytes(obj.Raw, &rs)
 		}
 	} else if obj.APIVersion == "rbac.authorization.k8s.io/v1" {
 		if obj.Kind == "ClusterRole" {
@@ -149,6 +189,47 @@ func writeYAML(yamlFile string, obj *runtime.Unknown) (err error) {
 		} else if obj.Kind == "RoleBinding" {
 			var rb rbacv1.RoleBinding
 			yamlData, err = yamlFromBytes(obj.Raw, &rb)
+		}
+	} else if obj.APIVersion == "admissionregistration.k8s.io/v1beta1" {
+		if obj.Kind == "MutatingWebhookConfiguration" {
+			var mwc admissionv1b1.MutatingWebhookConfiguration
+			yamlData, err = yamlFromBytes(obj.Raw, &mwc)
+		} else if obj.Kind == "ValidatingWebhookConfiguration" {
+			var vwc admissionv1b1.ValidatingWebhookConfiguration
+			yamlData, err = yamlFromBytes(obj.Raw, &vwc)
+		}
+	} else if obj.APIVersion == "autoscaling/v1" {
+		if obj.Kind == "HorizontalPodAutoscaler" {
+			var hpa autoscalev1.HorizontalPodAutoscaler
+			yamlData, err = yamlFromBytes(obj.Raw, &hpa)
+		}
+	} else if obj.APIVersion == "coordination.k8s.io/v1beta1" {
+		if obj.Kind == "Lease" {
+			var lease coordv1b1.Lease
+			yamlData, err = yamlFromBytes(obj.Raw, &lease)
+		}
+	} else if obj.APIVersion == "policy/v1beta1" {
+		if obj.Kind == "PodDisruptionBudget" {
+			var pdb policyv1b1.PodDisruptionBudget
+			yamlData, err = yamlFromBytes(obj.Raw, &pdb)
+		} else if obj.Kind == "PodSecurityPolicy" {
+			var psp policyv1b1.PodSecurityPolicy
+			yamlData, err = yamlFromBytes(obj.Raw, &psp)
+		}
+	} else if obj.APIVersion == "scheduling.k8s.io/v1" {
+		if obj.Kind == "PriorityClass" {
+			var pc schedv1.PriorityClass
+			yamlData, err = yamlFromBytes(obj.Raw, &pc)
+		}
+	} else if obj.APIVersion == "storage.k8s.io/v1" {
+		if obj.Kind == "StorageClass" {
+			var sc storagev1.StorageClass
+			yamlData, err = yamlFromBytes(obj.Raw, &sc)
+		}
+	} else if obj.APIVersion == "storage.k8s.io/v1beta1" {
+		if obj.Kind == "CSINode" {
+			var csin storagev1b1.CSINode
+			yamlData, err = yamlFromBytes(obj.Raw, &csin)
 		}
 	}
 
@@ -188,8 +269,8 @@ func main() {
 	flag.Parse()
 
 	if dbPath == "" || outPath == "" {
-		flag.Usage();
-		os.Exit(1);
+		flag.Usage()
+		os.Exit(1)
 	}
 
 	// Open the database file
