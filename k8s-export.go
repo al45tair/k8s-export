@@ -257,6 +257,10 @@ func writeYAML(yamlFile string, obj *runtime.Unknown) (err error) {
 	}
 	defer file.Close()
 
+	_, err = file.Write([]byte("---\n"))
+	if err != nil {
+		return err
+	}
 	_, err = file.Write(versionKindData)
 	if err != nil {
 		return err
