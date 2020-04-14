@@ -247,11 +247,7 @@ func writeYAML(yamlFile string, obj *runtime.Unknown) (err error) {
 		return err
 	}
 
-	yamlDir := filepath.Dir(yamlFile)
-	if err := os.MkdirAll(yamlDir, 0777); err != nil && !os.IsExist(err) {
-		return err
-	}
-	file, err := os.Create(yamlFile)
+	file, err := createYAMLFile(yamlFile)
 	if err != nil {
 		return err
 	}
@@ -265,6 +261,30 @@ func writeYAML(yamlFile string, obj *runtime.Unknown) (err error) {
 	if err != nil {
 		return err
 	}
+	_, err = file.Write(yamlData)
+	return err
+}
+
+func createYAMLFile(filename string) (*os.File, error) {
+	yamlDir := filepath.Dir(filename)
+	if err := os.MkdirAll(yamlDir, 0777); err != nil && !os.IsExist(err) {
+		return nil, err
+	}
+	return os.Create(filename)
+}
+
+func writeYAMLDataToFile(filename string, yamlData []byte) error {
+	file, err := createYAMLFile(filename)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	_, err = file.Write([]byte("---\n"))
+	if err != nil {
+		return err
+	}
+
 	_, err = file.Write(yamlData)
 	return err
 }
@@ -310,17 +330,21 @@ func main() {
 				return nil
 			}
 
+			suffix := fmt.Sprintf("-%d-%d.yaml", rev.main, rev.sub)
+			yamlPath := filepath.Join(outPath,
+				filepath.FromSlash(key)) + suffix
+
 			var obj runtime.Unknown
 			if len(kv.Value) < 4 || !isK8s0(kv.Value[:4]) {
+				yamlData, err := yaml.JSONToYAML(kv.Value)
+				if err == nil {
+					writeYAMLDataToFile(yamlPath, yamlData)
+				}
 				return nil
 			}
 			if err := obj.Unmarshal(kv.Value[4:]); err != nil {
 				return err
 			}
-
-			suffix := fmt.Sprintf("-%d-%d.yaml", rev.main, rev.sub)
-			yamlPath := filepath.Join(outPath,
-				filepath.FromSlash(key)) + suffix
 
 			writeYAML(yamlPath, &obj)
 
